@@ -19,13 +19,14 @@ export type BackupJSONFileLatestShort = [
 ]
 export function compressBackupFile(file: BackupJSONFileLatest, profileIdentifier?: ProfileIdentifier): string {
     const { grantedHostPermissions, profiles, personas } = file
-    if (!profileIdentifier)
+    if (!profileIdentifier && profiles.length)
         profileIdentifier = Identifier.fromString(profiles[0].identifier, ProfileIdentifier).unwrap()
+    if (!profileIdentifier) throw new Error('Target profile not found')
     const profile = profiles.find((x) => x.identifier === profileIdentifier!.toText())
     if (!profile?.linkedPersona) throw new Error('Target profile/persona not found')
     const persona = personas.find((x) => x.identifier === profile.linkedPersona)
     if (!persona?.privateKey) throw new Error('Target persona not found')
-    const { localKey, nickname, privateKey, linkedProfiles } = persona
+    const { localKey, nickname, privateKey } = persona
     return ([
         '1',
         profileIdentifier.network,

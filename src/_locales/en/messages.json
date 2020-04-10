@@ -17,6 +17,7 @@
     "back": "Back",
     "backup": "Backup",
     "backup_persona": "Backup your persona.",
+    "backup_persona_unavailable": "Please connect a social network profile.",
     "banner_get_started": "Setup Maskbook",
     "banner_preparing_setup": "You need to setup your Maskbook account.",
     "banner_title": "Welcome to Maskbook",
