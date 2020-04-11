@@ -5,7 +5,6 @@ import { DialogContentItem, DialogRouter } from './DialogBase'
 
 import { TextField, Typography, InputBase, makeStyles, TypographyProps } from '@material-ui/core'
 import { useHistory } from 'react-router-dom'
-import { useSnackbar } from 'notistack'
 import AbstractTab, { AbstractTabProps } from '../DashboardComponents/AbstractTab'
 import ActionButton from '../DashboardComponents/ActionButton'
 import { ECKeyIdentifier, Identifier } from '../../../database/type'
@@ -32,42 +31,49 @@ export function PersonaCreateDialog() {
     const { t } = useI18N()
     const [name, setName] = useState('')
     const [password, setPassword] = useState('')
-    const history = useHistory()
-    const { enqueueSnackbar } = useSnackbar()
 
-    const createPersona = () => {
-        if (!name) {
-            enqueueSnackbar(t('error_name_absent'), { variant: 'error' })
-            return
-        }
-        if (!password) {
-            enqueueSnackbar(t('error_password_absent'), { variant: 'error' })
-            return
-        }
-        Services.Identity.createPersonaByMnemonic(name, password).then((persona) => {
-            history.replace(`created?identifier=${encodeURIComponent(persona.toText())}`)
+    const history = useHistory()
+
+    const [validationError, setValidationError] = useState<{ name: string; password: string }>({
+        name: '',
+        password: '',
+    })
+    const validatePersona = () => {
+        setValidationError({
+            name: name ? '' : t('error_name_absent'),
+            password: password ? '' : t('error_password_absent'),
         })
+        return name && password
+    }
+    const createPersona = () => {
+        if (validatePersona()) {
+            Services.Identity.createPersonaByMnemonic(name, password).then((persona) => {
+                history.replace(`created?identifier=${encodeURIComponent(persona.toText())}`)
+            })
+        }
     }
 
     const content = (
         <div style={{ alignSelf: 'stretch', textAlign: 'center', width: '100%' }}>
             <TextField
+                required
+                error={!!validationError.name}
                 style={{ width: '100%', maxWidth: '320px' }}
                 autoFocus
-                required
                 variant="outlined"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                helperText=" "
+                helperText={validationError.name || ' '}
                 label="Name"
             />
             <TextField
                 required
+                error={!!validationError.password}
                 type="password"
                 style={{ width: '100%', maxWidth: '320px' }}
                 variant="outlined"
                 label="Password"
-                helperText={t('dashboard_password_helper_text')}
+                helperText={validationError.password || t('dashboard_password_helper_text')}
                 placeholder={t('dashboard_password_hint')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

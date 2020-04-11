@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { Link, useHistory } from 'react-router-dom'
-import { useSnackbar } from 'notistack'
 import StepBase from './StepBase'
 import { TextField, makeStyles, createStyles } from '@material-ui/core'
 import { useI18N } from '../../../utils/i18n-next-ui'
@@ -32,22 +31,26 @@ export default function InitStep1S() {
     const subheader = t('dashboard_init_step_1_hint')
     const [name, setName] = useState('')
     const [password, setPassword] = useState('')
-    const { enqueueSnackbar } = useSnackbar()
 
     const classes = useStyles()
     const history = useHistory()
 
+    const [validationError, setValidationError] = useState<{ name: string; password: string }>({
+        name: '',
+        password: '',
+    })
+    const validatePersona = () => {
+        setValidationError({
+            name: name ? '' : t('error_name_absent'),
+            password: password ? '' : t('error_password_absent'),
+        })
+        return name && password
+    }
     const createPersonaAndNext = async () => {
-        if (!name) {
-            enqueueSnackbar(t('error_name_absent'), { variant: 'error' })
-            return
+        if (validatePersona()) {
+            const persona = await Services.Identity.createPersonaByMnemonic(name, password)
+            history.replace(`${InitStep.Setup2}?identifier=${encodeURIComponent(persona.toText())}`)
         }
-        if (!password) {
-            enqueueSnackbar(t('error_password_absent'), { variant: 'error' })
-            return
-        }
-        const persona = await Services.Identity.createPersonaByMnemonic(name, password)
-        history.replace(`${InitStep.Setup2}?identifier=${encodeURIComponent(persona.toText())}`)
     }
 
     const actions = (
@@ -63,17 +66,19 @@ export default function InitStep1S() {
     const content = (
         <div className={classes.container}>
             <TextField
-                autoFocus
                 required
+                error={!!validationError.name}
+                autoFocus
                 className={classes.input}
                 InputLabelProps={{ shrink: true }}
                 variant="outlined"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 label="Name"
-                helperText=" "></TextField>
+                helperText={validationError.name || ' '}></TextField>
             <TextField
                 required
+                error={!!validationError.password}
                 className={classes.input}
                 InputLabelProps={{ shrink: true }}
                 variant="outlined"
@@ -82,7 +87,7 @@ export default function InitStep1S() {
                 type="password"
                 onChange={(e) => setPassword(e.target.value)}
                 label="Password"
-                helperText={t('dashboard_password_helper_text')}></TextField>
+                helperText={validationError.password || t('dashboard_password_helper_text')}></TextField>
         </div>
     )
 
